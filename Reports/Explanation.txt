@@ -1,4 +1,0 @@
-Custom Report with Custom Filter in Salesforce
-
-This is used to apply filter from third party app to fetch data from salesforce (Test from Postman).
-get the code and apply filter accordingly.
