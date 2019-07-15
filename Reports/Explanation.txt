@@ -1,0 +1,15 @@
+                           Custom Report with Custom Filter in Salesforce
+
+This is used to apply filter from third party app to fetch data from salesforce (Test from Postman).
+First create a new Report in Salesforce.
+
+To filter a report, set filter values in the report metadata and then run the report. The following example retrieves the report metadata, overrides the filter value, create new filters and, runs the report. 
+The example:
+-Retrieves the report filter object from the metadata by using the ReportMetadata.getReportFilters method.
+-Sets the value in the filter to a specific date by using the ReportFilter.setValue method and runs the report.
+-Overrides the filter value to a different date and runs the report again.
+
+For the test class:
+The Reporting Apex methods don't run in system mode, they run in the context of the current user (also called the context user or the logged-in user). The methods have access to whatever the current user has access to.
+
+In Apex tests, report runs always ignore the SeeAllData annotation, regardless of whether the annotation is set to true or false. This means that report results will include pre-existing data that the test didn’t create. There is no way to disable the SeeAllData annotation for a report execution. To limit results, use a filter on the report.
