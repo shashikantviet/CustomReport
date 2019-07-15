@@ -1,0 +1,82 @@
+@RestResource(urlMapping ='/getCustomReportData/*')
+Global with Sharing class CustomReportGeneration {
+    global class wrapperOfExpenseValueAndLabel{
+        
+        String expLabel;
+        String expValue;
+        wrapperOfExpenseValueAndLabel(String expLabel, String expValue){
+            
+            this.expLabel = expLabel;
+            this.expValue = expValue;
+        }
+    }
+    
+    @HttpPost
+    global static List<wrapperOfExpenseValueAndLabel> doPost(String timeInterval) {
+        
+        //Get Loggedin User Name
+        String userName = [SELECT Id, Name FROM User WHERE ID =: UserInfo.getUserId()].Name;
+        
+        List<wrapperOfExpenseValueAndLabel> lstOfExpenses = new List<wrapperOfExpenseValueAndLabel>();
+        
+        // Get the report ID           
+        List <Report> reportList = [SELECT Id,DeveloperName FROM Report where 
+                                    DeveloperName ='Account_Report'];
+        String reportId= (String)reportList.get(0).get('Id');
+        
+        
+        // Get the report metadata
+        Reports.ReportDescribeResult describe = Reports.ReportManager.describeReport(reportId);
+        Reports.ReportMetadata reportMd = describe.getReportMetadata();
+        
+        if(String.isNotBlank(timeInterval)){
+            Reports.standardDateFilter stdDateFilter = reportMD.getStandardDateFilter();
+            stdDateFilter.setColumn('CREATED_DATE');
+            stdDateFilter.setDurationValue(timeInterval); //LAST_30_DAYS
+            reportMd.setStandardDateFilter(stdDateFilter);
+            
+        }
+        
+        List<Reports.ReportFilter> filters = new List<Reports.ReportFilter>();
+        
+        Reports.ReportFilter accountTypeFilter = new Reports.ReportFilter();
+        accountTypeFilter.setColumn('TYPE');
+        accountTypeFilter.setOperator('equals');
+        accountTypeFilter.setValue('Prospect');
+        filters.add(accountTypeFilter);
+        
+        Reports.ReportFilter accountOwnerFilter = new Reports.ReportFilter();
+        accountOwnerFilter.setColumn('CREATED');
+        accountOwnerFilter.setOperator('equals');
+        accountOwnerFilter.setValue(userName);
+        filters.add(accountOwnerFilter);
+        
+        reportMd.setReportFilters(filters);
+        
+        Reports.ReportResults reportResult = Reports.ReportManager.runReport(reportId, reportMd);
+        System.debug('>>>>>reportResult>>>>'+reportResult);
+        System.debug('>>>>>reportResult>>>>'+reportResult.getAllData());
+        System.debug('>>>>>reportResult>>>>'+reportResult.getFactMap());
+        System.debug('>>>>>reportResult>>>>'+reportResult.getReportMetadata());
+        //Use this for Stringify
+        System.debug('>>>>>reportResult>>>>'+JSON.serialize(reportResult));
+        
+        
+        // Get the first down-grouping in the report
+        Reports.Dimension dim = reportResult.getGroupingsDown();
+        for(Reports.GroupingValue groupingVal : dim.getGroupings()){
+            
+            lstOfExpenses.add(new wrapperOfExpenseValueAndLabel(groupingVal.getLabel(), (String)groupingVal.getValue()));
+        }
+        System.debug('>>>>>>>>>>>>'+lstOfExpenses);
+        System.debug('>>>>>>>>>>>>'+lstOfExpenses.size());
+        if(lstOfExpenses.size() > 0){
+            return lstOfExpenses;
+        }else{
+            return null;
+        }
+        
+        
+    }
+    
+}
